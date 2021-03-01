@@ -1,0 +1,10 @@
+#!/bin/bash
+
+./evm-contracts/scripts/native_solc6_compile Flags.sol
+./evm-contracts/scripts/native_solc6_compile FluxAggregator.sol
+./evm-contracts/scripts/native_solc6_compile tests/VRFConsumer.sol
+./evm-contracts/scripts/native_solc6_compile VRFCoordinator.sol
+./evm-contracts/scripts/native_solc6_compile tests/VRFRequestIDBaseTestHelper.sol
+./evm-contracts/scripts/native_solc6_compile tests/VRFTestHelper.sol
+
+./evm-contracts/scripts/native_solc7_compile dev/Operator.sol
