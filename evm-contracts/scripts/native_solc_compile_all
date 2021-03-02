@@ -1,10 +1,12 @@
 #!/bin/bash
 
-./evm-contracts/scripts/native_solc6_compile Flags.sol
-./evm-contracts/scripts/native_solc6_compile FluxAggregator.sol
-./evm-contracts/scripts/native_solc6_compile tests/VRFConsumer.sol
-./evm-contracts/scripts/native_solc6_compile VRFCoordinator.sol
-./evm-contracts/scripts/native_solc6_compile tests/VRFRequestIDBaseTestHelper.sol
-./evm-contracts/scripts/native_solc6_compile tests/VRFTestHelper.sol
+SCRIPTPATH="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
-./evm-contracts/scripts/native_solc7_compile dev/Operator.sol
+$SCRIPTPATH/native_solc6_compile Flags.sol
+$SCRIPTPATH/native_solc6_compile FluxAggregator.sol
+$SCRIPTPATH/native_solc6_compile tests/VRFConsumer.sol
+$SCRIPTPATH/native_solc6_compile VRFCoordinator.sol
+$SCRIPTPATH/native_solc6_compile tests/VRFRequestIDBaseTestHelper.sol
+$SCRIPTPATH/native_solc6_compile tests/VRFTestHelper.sol
+
+$SCRIPTPATH/native_solc7_compile dev/Operator.sol
