@@ -126,7 +126,7 @@ func WriteVersionsDB(db *IntegratedVersion) error {
 	for _, name := range pkgNames {
 		vinfo := db.ContractVersions[name]
 		versionLine := fmt.Sprintf("%s: %s %s %s\n", name,
-			vinfo.AbiPath, vinfo.BinaryPath, vinfo.Hash,)
+			vinfo.AbiPath, vinfo.BinaryPath, vinfo.Hash)
 		n, err = f.WriteString(versionLine)
 		if err != nil {
 			return errors.Wrapf(err, "while recording %s version line", name)

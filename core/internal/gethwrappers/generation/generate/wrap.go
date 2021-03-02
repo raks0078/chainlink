@@ -37,9 +37,9 @@ func main() {
 	}
 	versions.GethVersion = gethParams.Version
 	versions.ContractVersions[pkgName] = gethwrappers.ContractVersion{
-		Hash:         	gethwrappers.VersionHash(abiPath, binPath),
-		AbiPath: 		abiPath,
-		BinaryPath:		binPath,
+		Hash:       gethwrappers.VersionHash(abiPath, binPath),
+		AbiPath:    abiPath,
+		BinaryPath: binPath,
 	}
 	if err := gethwrappers.WriteVersionsDB(versions); err != nil {
 		gethwrappers.Exit("could not save versions db", err)
