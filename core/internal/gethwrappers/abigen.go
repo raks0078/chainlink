@@ -63,7 +63,7 @@ func Abigen(a AbigenArgs) {
 		"-type", a.Type,
 		"-pkg", a.Pkg,
 	}
-	if a.Bin != "" {
+	if a.Bin != "-" {
 		args = append(args, "-bin", a.Bin)
 	}
 	buildCommand := exec.Command(abigenExecutablePath, args...)

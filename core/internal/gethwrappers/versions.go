@@ -80,10 +80,10 @@ func ReadVersionsDB() (*IntegratedVersion, error) {
 				return nil, errors.Errorf("more than one geth version")
 			}
 			rv.GethVersion = line[1]
-		} else { // It's a wrapper from a json compiler artifact
+		} else { // It's a wrapper from a compiler artifact
 			if len(line) != 4 {
 				return nil, errors.Errorf(`"%s" should have four elements `+
-					`"<pkgname>: <compiler-artifact-hash> <abi-path> <bin-path>"`,
+					`"<pkgname>: <abi-path> <bin-path> <hash>"`,
 					db.Text())
 			}
 			_, alreadyExists := rv.ContractVersions[topic]
@@ -91,7 +91,7 @@ func ReadVersionsDB() (*IntegratedVersion, error) {
 				return nil, errors.Errorf(`topic "%s" already mentioned!`, topic)
 			}
 			rv.ContractVersions[topic] = ContractVersion{
-				Hash: line[1], AbiPath: line[2], BinaryPath: line[3],
+				AbiPath: line[1], BinaryPath: line[2], Hash: line[3],
 			}
 		}
 	}
@@ -125,8 +125,8 @@ func WriteVersionsDB(db *IntegratedVersion) error {
 	sort.Strings(pkgNames)
 	for _, name := range pkgNames {
 		vinfo := db.ContractVersions[name]
-		versionLine := fmt.Sprintf("%s: %s %s %s\n", name, vinfo.Hash,
-			vinfo.AbiPath, vinfo.BinaryPath)
+		versionLine := fmt.Sprintf("%s: %s %s %s\n", name,
+			vinfo.AbiPath, vinfo.BinaryPath, vinfo.Hash,)
 		n, err = f.WriteString(versionLine)
 		if err != nil {
 			return errors.Wrapf(err, "while recording %s version line", name)
