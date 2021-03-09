@@ -720,6 +720,10 @@ func (c Config) LogLevel() LogLevel {
 func (c Config) LogToDisk() bool {
 	return c.viper.GetBool(EnvVarName("LogToDisk"))
 }
+// LogToDisk configures disk preservation of logs.
+func (c Config) LogFiltering() string {
+	return c.viper.GetString(EnvVarName("LogFiltering"))
+}
 
 // LogSQLStatements tells chainlink to log all SQL statements made using the default logger
 func (c Config) LogSQLStatements() bool {
@@ -927,7 +931,7 @@ func (c Config) CertFile() string {
 // directory and LogLevel, with pretty printing for stdout. If LOG_TO_DISK is
 // false, the logger will only log to stdout.
 func (c Config) CreateProductionLogger() *logger.Logger {
-	return logger.CreateProductionLogger(c.RootDir(), c.JSONConsole(), c.LogLevel().Level, c.LogToDisk())
+	return logger.CreateProductionLogger(c.RootDir(), c.JSONConsole(), c.LogLevel().Level, c.LogToDisk(), c.LogFiltering())
 }
 
 // SessionSecret returns a sequence of bytes to be used as a private key for

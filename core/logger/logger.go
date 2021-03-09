@@ -72,7 +72,7 @@ func CreateLogger(zl *zap.SugaredLogger) *Logger {
 // CreateProductionLogger returns a log config for the passed directory
 // with the given LogLevel and customizes stdout for pretty printing.
 func CreateProductionLogger(
-	dir string, jsonConsole bool, lvl zapcore.Level, toDisk bool) *Logger {
+	dir string, jsonConsole bool, lvl zapcore.Level, toDisk bool, logFiltering string) *Logger {
 	config := zap.NewProductionConfig()
 	if !jsonConsole {
 		config.OutputPaths = []string{"pretty://console"}
@@ -85,10 +85,15 @@ func CreateProductionLogger(
 	config.Level.SetLevel(lvl)
 
 	zl, err := config.Build(zap.AddCallerSkip(1))
+
+	if logFiltering != "" {
+		zl = zl.WithOptions(zap.WrapCore(func(next zapcore.Core) zapcore.Core {
+			return NewFilteringCore(next, logFiltering)
+		}))
+	}
+
 	if err != nil {
 		log.Fatal(err)
 	}
-	return &Logger{
-		SugaredLogger: zl.Sugar(),
-	}
+	return CreateLogger(zl.Sugar())
 }
