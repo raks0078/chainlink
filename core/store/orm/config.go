@@ -716,13 +716,14 @@ func (c Config) LogLevel() LogLevel {
 	return c.getWithFallback("LogLevel", parseLogLevel).(LogLevel)
 }
 
+// LogFiltering configures detailed filtering of logs.
+func (c Config) LogFiltering() string {
+	return c.viper.GetString(EnvVarName("LogFiltering"))
+}
+
 // LogToDisk configures disk preservation of logs.
 func (c Config) LogToDisk() bool {
 	return c.viper.GetBool(EnvVarName("LogToDisk"))
-}
-// LogToDisk configures disk preservation of logs.
-func (c Config) LogFiltering() string {
-	return c.viper.GetString(EnvVarName("LogFiltering"))
 }
 
 // LogSQLStatements tells chainlink to log all SQL statements made using the default logger
