@@ -800,11 +800,11 @@ func CreateSpecViaWeb(t testing.TB, app *TestApplication, spec string) models.Jo
 	return createdJob
 }
 
-func CreateJobViaWeb(t testing.TB, app *TestApplication, spec string) job.Job {
+func CreateJobViaWeb(t testing.TB, app *TestApplication, request []byte) job.Job {
 	t.Helper()
 
 	client := app.NewHTTPClient()
-	resp, cleanup := client.Post("/v2/jobs", bytes.NewBufferString(spec))
+	resp, cleanup := client.Post("/v2/jobs", bytes.NewBuffer(request))
 	defer cleanup()
 	AssertServerResponse(t, resp, http.StatusOK)
 
@@ -1145,6 +1145,20 @@ func WaitForRuns(t testing.TB, j models.JobSpec, store *strpkg.Store, want int) 
 	return jrs
 }
 
+func WaitForPipelineRuns(t testing.TB, nodeID int, jobID int32, jo job.ORM, want int, timeout, poll time.Duration) []pipeline.Run {
+	t.Helper()
+
+	var err error
+	prs := []pipeline.Run{}
+	gomega.NewGomegaWithT(t).Eventually(func() []pipeline.Run {
+		prs, _, err = jo.PipelineRunsByJobID(jobID, 0, 1000)
+		assert.NoError(t, err)
+		return prs
+	}, timeout, poll).ShouldNot(gomega.HaveLen(want))
+
+	return prs
+}
+
 func WaitForPipelineComplete(t testing.TB, nodeID int, jobID int32, jo job.ORM, timeout, poll time.Duration) pipeline.Run {
 	t.Helper()
 	g := gomega.NewGomegaWithT(t)
@@ -1164,7 +1178,7 @@ func WaitForPipelineComplete(t testing.TB, nodeID int, jobID int32, jo job.ORM, 
 			}
 		}
 		return nil
-	}, timeout, poll).ShouldNot(gomega.BeNil(), fmt.Sprintf("job %d on node %d not complete", jobID, nodeID))
+	}, timeout, poll).Should(gomega.BeNil(), fmt.Sprintf("job %d on node %d not complete", jobID, nodeID))
 	return pr
 }
 

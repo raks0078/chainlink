@@ -70,6 +70,7 @@ require (
 	gorm.io/driver/sqlite v1.1.3 // indirect
 	gorm.io/driver/sqlserver v1.0.5 // indirect
 	gorm.io/gorm v1.20.12
+	gotest.tools v2.2.0+incompatible
 )
 
 replace github.com/DATA-DOG/go-txdb => github.com/smartcontractkit/go-txdb v0.1.4-0.20210313013032-3a5ba5dff784

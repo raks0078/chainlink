@@ -21,7 +21,10 @@ import (
 	"github.com/smartcontractkit/chainlink/core/store/dialects"
 
 	"github.com/smartcontractkit/chainlink/core/services/bulletprooftxmanager"
+	"github.com/smartcontractkit/chainlink/core/services/job"
 	"github.com/smartcontractkit/chainlink/core/services/offchainreporting"
+	"github.com/smartcontractkit/chainlink/core/services/pipeline"
+	"github.com/smartcontractkit/chainlink/core/services/postgres"
 
 	"github.com/onsi/gomega"
 
@@ -271,7 +274,7 @@ func TestIntegration_RunLog(t *testing.T) {
 			assert.Equal(t, models.InitiatorRunLog, initr.Type)
 
 			creationHeight := int64(1)
-			runlog := cltest.NewRunLog(t, j.ID, cltest.NewAddress(), cltest.NewAddress(), int(creationHeight), `{}`)
+			runlog := cltest.NewRunLog(t, models.IDToTopic(j.ID), cltest.NewAddress(), cltest.NewAddress(), int(creationHeight), `{}`)
 			runlog.BlockHash = test.logBlockHash
 			logs := <-logsCh
 			logs <- runlog
@@ -363,7 +366,7 @@ func TestIntegration_ExternalAdapter_RunLogInitiated(t *testing.T) {
 	j := cltest.FixtureCreateJobViaWeb(t, app, "fixtures/web/log_initiated_bridge_type_job.json")
 
 	logBlockNumber := 1
-	runlog := cltest.NewRunLog(t, j.ID, cltest.NewAddress(), cltest.NewAddress(), logBlockNumber, `{}`)
+	runlog := cltest.NewRunLog(t, models.IDToTopic(j.ID), cltest.NewAddress(), cltest.NewAddress(), logBlockNumber, `{}`)
 	logs := <-logsCh
 	logs <- runlog
 	jr := cltest.WaitForRuns(t, j, app.Store, 1)[0]
@@ -1530,6 +1533,54 @@ observationSource = """
 			require.Len(t, j.JobSpecErrors, 0)
 		}
 	}
+}
+
+func TestIntegration_DirectRequest(t *testing.T) {
+	config, cfgCleanup := cltest.NewConfig(t)
+	defer cfgCleanup()
+	config.Set("MIN_INCOMING_CONFIRMATIONS", 6)
+
+	rpcClient, gethClient, sub, assertMockCalls := cltest.NewEthMocks(t)
+	defer assertMockCalls()
+	app, cleanup := cltest.NewApplication(t,
+		eth.NewClientWith(rpcClient, gethClient),
+	)
+	defer cleanup()
+
+	store := app.Store
+
+	eventBroadcaster := postgres.NewEventBroadcaster(config.DatabaseURL(), 0, 0)
+	eventBroadcaster.Start()
+	defer eventBroadcaster.Stop()
+
+	pipelineORM := pipeline.NewORM(store.ORM.DB, config, eventBroadcaster)
+	jobORM := job.NewORM(store.ORM.DB, store.Config, pipelineORM, eventBroadcaster, &postgres.NullAdvisoryLocker{})
+
+	sub.On("Err").Return(nil).Maybe()
+	sub.On("Unsubscribe").Return(nil).Maybe()
+
+	rpcClient.On("CallContext", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe().Return(nil)
+	gethClient.On("ChainID", mock.Anything).Maybe().Return(app.Store.Config.ChainID(), nil)
+	gethClient.On("FilterLogs", mock.Anything, mock.Anything).Maybe().Return([]models.Log{}, nil)
+
+	newHeads := make(chan<- *models.Head, 10)
+	rpcClient.On("EthSubscribe", mock.Anything, mock.Anything, "newHeads").
+		Run(func(args mock.Arguments) {
+			newHeads = args.Get(1).(chan<- *models.Head)
+		}).
+		Return(sub, nil)
+	require.NoError(t, app.StartAndConnect())
+	fmt.Println("newHeads", newHeads)
+
+	j := cltest.FixtureCreateJobSpecV2ViaWeb(t, app, "../web/testdata/direct-request-spec.toml")
+
+	runlog := cltest.NewRunLog(t, j.DirectRequestSpec.OnChainJobSpecID, cltest.NewAddress(), cltest.NewAddress(), 1, `{}`)
+	runlog.BlockHash = cltest.NewHash()
+
+	run := cltest.WaitForPipelineComplete(t, 0, j.ID, jobORM, 5*time.Second, 30*time.Millisecond)
+	require.Len(t, run.PipelineTaskRuns, 1)
+	assert.Empty(t, run.PipelineTaskRuns[0].Error)
+	assert.Empty(t, run.Errors)
 }
 
 func TestIntegration_GasUpdater(t *testing.T) {
