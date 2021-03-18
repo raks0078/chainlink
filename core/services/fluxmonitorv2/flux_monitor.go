@@ -522,7 +522,10 @@ func (fm *FluxMonitor) processLogs() {
 			err = broadcast.MarkConsumed()
 
 		case *flags_wrapper.FlagsFlagLowered:
-			fm.reactivate()
+			// Only reactivate if it is hibernating
+			if fm.isHibernating {
+				fm.reactivate()
+			}
 			err = broadcast.MarkConsumed()
 
 		default:
